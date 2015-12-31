@@ -2316,7 +2316,17 @@ TX_PGM_PARAMS_MULTI:  	DB 	13, 13, 4, 5, 13, 5, 2, 5, 3, 3, 2
   ENDIF 
 ENDIF
 
-
+; Subroutine remaps pwm value (implements throttle curve)
+; Input: A holds value to be remapped and ranges from 0 to 255
+; Output: A holds remapped value
+; -Patrick
+motor_pwm_remap:
+    push B
+    mov  B, #MOTOR_PPM_LOW_SLOPE
+    mul  AB
+    mov  A, B
+    pop  B
+    ret
 
 ;**** **** **** **** **** **** **** **** **** **** **** **** ****
 ;
@@ -2340,22 +2350,19 @@ IF MCU_48MHZ == 1
 t0_int_start:
 ENDIF
 	push	PSW			; Preserve registers through interrupt
-	push	ACC
-	push	B			; Preserve B through interrupt -Patrick		
+	push	ACC	
 	
 	; Scale Current_Pwm_Limited and Current_Pwm_Lim_Dith by MOTOR_PPM_LOW_SLOPE -Patrick
 
 	; Scale Current_Pwm_Limited -Patrick
-	mov  B, #MOTOR_PPM_LOW_SLOPE
 	mov	A, Current_Pwm_Limited
-	mul  AB
-	mov  Current_Pwm_Limited_Remapped, B
+	call motor_pwm_remap
+	mov  Current_Pwm_Limited_Remapped, A
 
 	; Scale Current_Pwm_Lim_Dith -Patrick
-	mov  B, #MOTOR_PPM_LOW_SLOPE
 	mov	A, Current_Pwm_Lim_Dith
-	mul  AB
-	mov  Current_Pwm_Lim_Dith_Remapped, B
+	call motor_pwm_remap
+	mov  Current_Pwm_Lim_Dith_Remapped, A
 
 	; Check if pwm is on
 	jb	Flags0.PWM_ON, t0_int_pwm_off	; Is pwm on?
@@ -2395,7 +2402,6 @@ IF MCU_48MHZ == 1
 ENDIF
 	setb	Flags0.PWM_ON				; Set pwm on flag
 	; Exit interrupt
-	pop	  B			; Restore B register -Patrick
 	pop	ACC			; Restore preserved registers
 	pop	PSW
 	setb	EA			; Enable all interrupts
@@ -2442,7 +2448,6 @@ t0_int_pwm_off_exit_nfets_off:
 IF MCU_48MHZ == 1
 	mov	TH1, #0		
 ENDIF
-	pop	  B			; Restore B register -Patrick
 	pop	ACC			; Restore preserved registers
 	pop	PSW
 	All_nFETs_Off 		; Switch off all nfets
@@ -2473,7 +2478,6 @@ t0_int_pwm_off_exit:
 IF MCU_48MHZ == 1
 	mov	TH1, #0		
 ENDIF
-	pop	  B			; Restore B register -Patrick
 	pop	ACC			; Restore preserved registers
 	pop	PSW
 	setb	EA			; Enable all interrupts
