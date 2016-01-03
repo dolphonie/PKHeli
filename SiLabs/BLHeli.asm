@@ -1869,7 +1869,10 @@ DEFAULT_PGM_ENABLE_POWER_PROT 	EQU 1 	; 1=Enabled 	0=Disabled
 DEFAULT_PGM_ENABLE_PWM_INPUT	 	EQU 0 	; 1=Enabled 	0=Disabled
 
 ; PATRICK'S CHANGES
-MOTOR_PPM_LOW_SLOPE				EQU 43   ;256/6 = 43 -Patrick
+MOTOR_PPM_LOW_SLOPE				EQU 43   ; 256/6 = 43; Slope is 1/6 -Patrick
+MOTOR_PPM_HIGH_SLOPE			EQU 144  ; Slope = 2.254 modifier = 64 * 2.254 to avoid overflow -Patrick
+MOTOR_PPM_REMAP_THRESHOLD		EQU 153  ; Threshold is at 60% throttle 255*.6 = 153 -Patrick
+MOTOR_PPM_REMAP_THRESHOLD_VALUE	EQU 26   ; (255/6) * .6: Threshold is at 60% throttle, value = (threshold/6) + 4 for final offset -Patrick
 
 ;**** **** **** **** ****
 ; Constant definitions for main
@@ -2322,9 +2325,32 @@ ENDIF
 ; -Patrick
 motor_pwm_remap:
     push B
+    ;Test if value is below or above threshold
+    clr C
+    subb A, #MOTOR_PPM_REMAP_THRESHOLD
+    jc remap_low_slope
+    
+    ; If throttle higher than threshold use high slope
+    mov  B, #MOTOR_PPM_HIGH_SLOPE
+    mul  AB	 ; 16 bit product in BA
+    ; compute BA << 2
+    rlc  A
+    xch A, B
+    rlc  A  ; left shift MSB
+    xch A, B
+    rlc  A
+    xch A, B 
+    rlc  A  ; left shift MSB
+    add A, #MOTOR_PPM_REMAP_THRESHOLD_VALUE
+    pop  B
+    ret
+
+    remap_low_slope:
+    ; If throttle less than threshold use low slope
+    add  A, #MOTOR_PPM_REMAP_THRESHOLD
     mov  B, #MOTOR_PPM_LOW_SLOPE
     mul  AB
-    mov  A, B
+    mov  A, B ; Divide by 256
     pop  B
     ret
 
