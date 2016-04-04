@@ -1869,10 +1869,10 @@ DEFAULT_PGM_ENABLE_POWER_PROT 	EQU 1 	; 1=Enabled 	0=Disabled
 DEFAULT_PGM_ENABLE_PWM_INPUT	 	EQU 0 	; 1=Enabled 	0=Disabled
 
 ; PATRICK'S CHANGES
-MOTOR_PPM_LOW_SLOPE				EQU 43   ; 256/6 = 43; Slope is 1/6 -Patrick
-MOTOR_PPM_HIGH_SLOPE			EQU 144  ; Slope = 2.254 modifier = 64 * 2.254 to avoid overflow -Patrick
-MOTOR_PPM_REMAP_THRESHOLD		EQU 153  ; Threshold is at 60% throttle 255*.6 = 153 -Patrick
-MOTOR_PPM_REMAP_THRESHOLD_VALUE	EQU 26   ; (255/6) * .6: Threshold is at 60% throttle, value = (threshold/6) + 4 for final offset -Patrick
+MOTOR_PPM_LOW_SLOPE				EQU 102  ; Divide constant by 256 for low slope -Patrick
+MOTOR_PPM_HIGH_SLOPE			EQU 122  ; Divide constant by 64 for high slope -Patrick
+MOTOR_PPM_REMAP_THRESHOLD		EQU 153  ; Divide constant by 256 for threshold -Patrick
+MOTOR_PPM_REMAP_THRESHOLD_VALUE	EQU 61   ; Absissa joint height -Patrick
 
 ;**** **** **** **** ****
 ; Constant definitions for main
